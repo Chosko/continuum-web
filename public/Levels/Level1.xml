@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<level xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="LevelSchema.xsd" 
+       title="CONTINUUM" subtitle="finira prima o poi..." duration="200" numlevels="1">
+  <texturesDeclaration>
+    <texture id="playership" path="Ships/ship" />
+    <texture id="roccia" path="Backgrounds/background_roccia"/>
+    <texture id="gunbullet" path="Weapons/gunBullet"/>
+    <texture id="enemybullet" path="Weapons/enemyBullet"/>
+    <texture id="shadow" path="Effects/shadowcorner"/>
+    <texture id="asteroid" path="Asteroids/asteroid"/>
+    <texture id="damagesmoke" path="Animations/animation" />
+    <texture id="explosion" path="Animations/explosion"/>
+    <texture id="enemyeasy" path="Enemies/easy" />
+    <texture id="enemynormal" path="Enemies/normal"/>
+    <texture id="tachyonstream" path="Animations/TachyonStream"/>
+    <texture id="tachyon" path="Effects/tachyon"/>
+    <texture id="rocket" path="Weapons/rocket"/>
+    <texture id="followingrocket" path="Weapons/rocketfollower"/>
+    <texture id="gunpowerup" path="PowerUps/gunPowerUp"/>
+    <texture id="rocketpowerup" path="PowerUps/rocketPowerUp"/>
+    <texture id="void" path="Effects/void" />
+    <texture id="plasmagranade" path="Weapons/plasmagranade"/>
+    <texture id="scope" path="Weapons/scope"/>
+  </texturesDeclaration>
+  
+  <startlevel>
+    <backgroundTexture timestamp="0" texture="roccia" level="0" speed="300"/>
+    <asteroid timestamp="5" life="50" xposition="0" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="10" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="20" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="30" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="40" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="50" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="60" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="70" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="80" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="90" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="100" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="110" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="120" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="130" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="140" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="150" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="160" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="170" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="180" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="190" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="200" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="210" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="220" speed="500" texture="asteroid" />
+    <asteroid timestamp="5" life="50" xposition="230" speed="500" texture="asteroid" />
+    <enemy timestamp="12" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="3" powerup="Gun"/>
+    <enemy timestamp="20" x="100" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Rocket"/>
+    <enemy timestamp="32" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="6" powerup="Gun"/>
+    <tachyonStream timestamp="40" duration="5" xposition="150" texture="tachyonstream"/>
+    <enemy timestamp="50" x="200" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="10" powerup="Gun"/>
+    <asteroid timestamp="55" life="20" speed="300" texture="asteroid" xposition="100" />
+    <asteroid timestamp="55" life="50" speed="500" texture="asteroid" xposition="300" />
+    <asteroid timestamp="56" life="30" speed="400" texture="asteroid" xposition="200" />
+    <asteroid timestamp="57" life="40" speed="1000" texture="asteroid" xposition="150" />
+    <tachyonStream timestamp="65" duration="5" xposition="300" texture="tachyonstream"/>
+    <enemy timestamp="70" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="76" x="100" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="3" powerup="Rocket"/>
+    <enemy timestamp="85" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="Gun" life="4" powerup="Gun"/>
+    <asteroid timestamp="95" life="20" xposition="300" speed="120" texture="asteroid" />
+    <asteroid timestamp="98" life="30" xposition="600" speed="200" texture="asteroid" />
+    <asteroid timestamp="99" life="10" xposition="400" speed="180" texture="asteroid" />
+    <asteroid timestamp="100" life="40" xposition="700" speed="250" texture="asteroid" />
+    <tachyonStream timestamp="100" duration="5" xposition="350" texture="tachyonstream"/>
+    <enemy timestamp="110" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="110" x="-10" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="3" powerup="Rocket"/>
+    <enemy timestamp="110" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="5" powerup="Rocket"/>
+    <enemy timestamp="110" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="110" x="410" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="6" powerup="Rocket"/>
+    <enemy timestamp="110" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="7" powerup="Rocket"/>
+    <enemy timestamp="130" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="130" x="-10" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="8" powerup="Rocket"/>
+    <enemy timestamp="130" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="9" powerup="Rocket"/>
+    <enemy timestamp="130" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="130" x="410" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="10" powerup="Rocket"/>
+    <enemy timestamp="130" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="11" powerup="Gun"/>
+    <tachyonStream timestamp="135" duration="5" xposition="100" texture="tachyonstream"/>
+    <enemy timestamp="140" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="140" x="-10" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="12" powerup="Rocket"/>
+    <enemy timestamp="140" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="13" powerup="Rocket"/>
+    <enemy timestamp="140" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="140" x="410" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="14" powerup="Rocket"/>
+    <enemy timestamp="140" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="15" powerup="Rocket"/>
+    <enemy timestamp="140" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="140" x="-10" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="16" powerup="Rocket"/>
+    <enemy timestamp="140" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="20" powerup="Rocket"/>
+    <enemy timestamp="140" x="300" y="-10" speed="0.1" texture="enemyeasy" weapon="Gun" life="5" powerup="Gun"/>
+    <enemy timestamp="140" x="410" y="200" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="25" powerup="Rocket"/>
+    <enemy timestamp="140" x="200" y="-10" speed="0.1" texture="enemynormal" weapon="RocketLauncher" life="30" powerup="Gun"/>
+    <asteroid timestamp="160" life="20" xposition="300" speed="120" texture="asteroid" />
+    <asteroid timestamp="160" life="30" xposition="600" speed="200" texture="asteroid" />
+    <asteroid timestamp="160" life="10" xposition="400" speed="180" texture="asteroid" />
+    <asteroid timestamp="160" life="40" xposition="700" speed="250" texture="asteroid" />
+  </startlevel>
+  <endlevel />
+</level>

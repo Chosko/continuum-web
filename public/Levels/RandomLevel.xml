@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<level xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="LevelSchema.xsd" 
+       title="CONTINUUM" subtitle="finira prima o poi..." duration="0" numlevels="3">
+
+  <texturesDeclaration>
+    <texture id="playership" path="Ships/ship" />
+    <texture id="stars0" path="Backgrounds/bgr0_0"/>
+    <texture id="stars1" path="Backgrounds/bgr0_1"/>
+    <texture id="stars2" path="Backgrounds/bgr0_2"/>
+    <texture id="gunbullet" path="Weapons/gunBullet"/>
+    <texture id="enemybullet" path="Weapons/enemyBullet"/>
+    <texture id="shadow" path="Effects/shadowcorner"/>
+    <texture id="asteroid" path="Asteroids/asteroid"/>
+    <texture id="explosionChip1" path="Effects/explosionChip1"/>
+    <texture id="explosionChip2" path="Effects/explosionChip2"/>
+    <texture id="explosionChip3" path="Effects/explosionChip3"/>
+    <texture id="granadeChip1" path="Effects/grenadeChip1"/>
+    <texture id="granadeChip2" path="Effects/grenadeChip2"/>
+    <texture id="granadeChip3" path="Effects/grenadeChip3"/>
+    <texture id="asteroidChip1" path="Effects/asteroidChip1"/>
+    <texture id="asteroidChip2" path="Effects/asteroidChip2"/>
+    <texture id="asteroidChip3" path="Effects/asteroidChip3"/>
+    <texture id="enemyeasy" path="Enemies/easy" />
+    <texture id="enemynormal" path="Enemies/normal"/>
+    <texture id="tachyonstream" path="Animations/TachyonStream"/>
+    <texture id="tachyon" path="Effects/tachyon"/>
+    <texture id="rocket" path="Weapons/rocket"/>
+    <texture id="followingrocket" path="Weapons/rocketfollower"/>
+    <texture id="gunpowerup" path="PowerUps/gunPowerUp"/>
+    <texture id="rocketpowerup" path="PowerUps/rocketPowerUp"/>
+    <texture id="granadepowerup" path="PowerUps/grenadePowerUp"/>
+    <texture id="void" path="Effects/void" />
+    <texture id="plasmagranade" path="Weapons/plasmagranade"/>
+    <texture id="scope" path="Weapons/scope"/>
+    <texture id="blood" path="Effects/blood"/>
+  </texturesDeclaration>
+
+  <randomVariablesDeclaration>
+    <randomVariable id="asteroidLife" mean="20" meanIncrementPerMinute="2" standardDeviation="10" minValue="5" maxValue="100" />
+    <randomVariable id="asteroidSpeed" mean="100" meanIncrementPerMinute="20" standardDeviation="50" minValue="10" maxValue="1000" />
+    <randomVariable id="enemyEasyLife" mean="5" meanIncrementPerMinute="1" standardDeviation="5" minValue="1" maxValue="30" />
+    <randomVariable id="enemyEasySpeed" mean="1" meanIncrementPerMinute="0.1" standardDeviation="0.2" minValue="0.01" maxValue="0.5" />
+    <randomVariable id="enemyNormalLife" mean="7" meanIncrementPerMinute="1" standardDeviation="7" minValue="1" maxValue="40" />
+    <randomVariable id="enemyNormalSpeed" mean="1.3" meanIncrementPerMinute="0.1" standardDeviation="0.4" minValue="0.01" maxValue="0.6" />
+    <randomVariable id="tachyonStreamDuration" mean="5" maxValue="7" minValue="3" standardDeviation="3" />
+    <timeDependentVar id="maxSimultaneousEnemies" initialValue="1" maxValue="20" valueIncrementPerMinute="1" />
+    <timeDependentVar id="maxSecondsWithoutEnemies" initialValue="5" minValue="0" valueDecrementPerMinute="0.5" />
+    <timeDependentVar id="maxSimultaneousAsteroids" initialValue="1" maxValue="10" valueIncrementPerMinute="1" />
+  </randomVariablesDeclaration>
+
+  <startlevel>
+    <backgroundTexture timestamp="0" texture="stars1" level="0" speed="200"/>
+    <backgroundTexture timestamp="0" texture="stars1" level="1" speed="280"/>
+    <backgroundTexture timestamp="0" texture="stars2" level="2" speed="400"/>
+    <asteroidRandomizer timestamp="5" texture="asteroid" launchProbabilityPerSecond="0.08" probabilityIncrementPerMinute="0.05" 
+                        pobabilityMax="0.2" lifeRandomVariable="asteroidLife" speedRandomVariable="asteroidSpeed" maxSimultaneousAsteroids="maxSimultaneousAsteroids" />
+    <enemyRandomizer timestamp="5" texture="enemyeasy" launchProbabilityPerSecond="0.1" probabilityIncrementPerMinute="0.1"
+                     powerUpProbabilityPerLaunch="0.1" granadePowerUpProbability="0.2" rocketPowerUpProbability="0.1" weapon="Gun"
+                     lifeRandomVariable="enemyEasyLife" speedRandomVariable="enemyEasySpeed" 
+                     maxSimultaneousEnemies="maxSimultaneousEnemies" maxSecondsWithoutEnemies="maxSecondsWithoutEnemies" />
+    <enemyRandomizer timestamp="5" texture="enemynormal" launchProbabilityPerSecond="0.05" probabilityIncrementPerMinute="0.1"
+                     powerUpProbabilityPerLaunch="0.2" granadePowerUpProbability="0.3" rocketPowerUpProbability="0.5" weapon="RocketLauncher"
+                     lifeRandomVariable="enemyNormalLife" speedRandomVariable="enemyNormalSpeed" pobabilityMax="0.8"
+                     maxSimultaneousEnemies="maxSimultaneousEnemies" maxSecondsWithoutEnemies="maxSecondsWithoutEnemies" />
+    <tachyonStreamRandomizer timestamp="20" texture="tachyonstream" launchProbabilityPerSecond="0.1" durationRandomVariable="tachyonStreamDuration" />
+  </startlevel>
+  <endlevel />
+</level>
