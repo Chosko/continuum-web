@@ -22,7 +22,11 @@ export class BackgroundManager {
     if (!gs.pause) {
       const temp: BackgroundTexture[] = [];
 
+      // C# 4 foreach: `x` is ONE variable shared by the whole loop, so the rewind lambda below sees
+      // the last background enumerated in this update() call. `loopX` reproduces that capture.
+      let loopX: BackgroundTexture | undefined;
       for (const x of gs.backgrounds) {
+        loopX = x;
         x.update();
 
         if (gs.levelTime.continuum > 0) {
@@ -37,7 +41,7 @@ export class BackgroundManager {
               }
             } else {
               this.addElementRecord(
-                (value) => (this.backgroundLevels[x.level] = value as BackgroundTexture | null),
+                (value) => (this.backgroundLevels[loopX!.level] = value as BackgroundTexture | null),
                 this.backgroundLevels[x.level] ?? null,
               );
               this.backgroundLevels[x.level] = x;

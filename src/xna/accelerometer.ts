@@ -88,6 +88,8 @@ export async function requestMotionPermission(): Promise<boolean> {
 /** Shared hardware source (one listener set, many Accelerometer objects). */
 class MotionSource {
   mode: 'none' | 'device' | 'keyboard' = 'none';
+  /** Incremented whenever the data source changes (keyboard fallback -> real sensor), so consumers can recalibrate. */
+  generation = 0;
   value = new Vector3(0, 0, -1);
   timestamp = 0;
   hasData = false;
@@ -129,6 +131,7 @@ class MotionSource {
     if (!a || a.x === null || a.y === null || a.z === null) return;
     if (this.mode !== 'device') {
       this.mode = 'device';
+      this.generation++;
       clearTimeout(this.fallbackTimer);
       if (this.keyTimer !== undefined) {
         clearInterval(this.keyTimer);
@@ -163,6 +166,7 @@ class MotionSource {
   };
 
   private startKeyboard(): void {
+    this.generation++;
     this.mode = 'keyboard';
     this.lastKeyTick = performance.now();
     const tick = (): void => {
@@ -213,6 +217,10 @@ export class Accelerometer {
   /** 'device' (real sensor), 'keyboard' (desktop fallback) or 'none' (no data yet). */
   static get mode(): 'none' | 'device' | 'keyboard' {
     return source.mode;
+  }
+  /** Changes when the data source switches (e.g. keyboard fallback -> real sensor). */
+  static get sourceGeneration(): number {
+    return source.generation;
   }
   get currentValue(): AccelerometerReading {
     return new AccelerometerReading(source.value.clone(), source.timestamp);

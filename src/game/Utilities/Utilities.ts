@@ -1,4 +1,4 @@
-import { Color, Random, Rectangle, Vector2 } from '../../xna';
+import { Color, Random, Rectangle, Vector2, toInt32 } from '../../xna';
 
 /** Restores a variable to its previous state when travelling back in time. */
 export type RewindMethod = (value: any) => void;
@@ -105,8 +105,8 @@ export class Utility {
   /** Builds a rectangle from its center instead of its top-left corner. */
   static newRectangleFromCenterPosition(center: Vector2, width: number, height: number): Rectangle {
     return new Rectangle(
-      Math.trunc(center.x) - Math.trunc(width / 2),
-      Math.trunc(center.y) - Math.trunc(height / 2),
+      toInt32(center.x) - Math.trunc(width / 2),
+      toInt32(center.y) - Math.trunc(height / 2),
       width,
       height,
     );

@@ -6,6 +6,10 @@
  *   const touches = TouchPanel.getState();  touches.count, touches.get(i), touches.findById(id) (null if absent)
  *   TouchPanel.getCapabilities() -> { isConnected, maximumTouchCount }
  *
+ * Desktop: while the left mouse button is held, pressing the right button adds a second simultaneous
+ * contact (released on right-button up); from then on mouse moves drive that second contact while the
+ * first stays put. This lets mouse users perform the two-finger plasma grenade aim.
+ *
  * Positions are in VIRTUAL (480x800) coordinates. Call TouchPanel.attach(element, mapClientToVirtual)
  * once (the Stage does it).
  *
@@ -105,6 +109,10 @@ const DOUBLE_TAP_DISTANCE = 40;
 const FLICK_MIN_VELOCITY = 400;
 const FLICK_SAMPLE_WINDOW = 100;
 const MAX_QUEUE = 256;
+/** Released contacts are dropped after this long (XNA reports a release only in the frame it happens). */
+const RELEASED_TTL = 100;
+/** Pseudo pointerId of the emulated second finger (right mouse button). */
+const MOUSE_SECOND_ID = -2;
 
 interface Contact {
   id: number;
@@ -112,6 +120,7 @@ interface Contact {
   position: Vector2;
   pressedReported: boolean;
   released: boolean;
+  releasedAt: number;
 }
 
 interface Primary {
@@ -141,6 +150,8 @@ class TouchPanelImpl {
   private lastTap: { t: number; p: Vector2 } | null = null;
   private mapper: Mapper = (x, y) => new Vector2(x, y);
   private attached: HTMLElement | null = null;
+  /** Mouse pointerId currently holding the emulated second finger (right button), or null. */
+  private mouseSecondOf: number | null = null;
 
   /** Starts listening on `element` (pointerdown) and window (move/up/cancel). */
   attach(element: HTMLElement, mapper: Mapper): void {
@@ -170,6 +181,7 @@ class TouchPanelImpl {
 
   /** XNA TouchPanel.GetState(): Pressed on the first report, then Moved, then Released once. */
   getState(): TouchCollection {
+    this.pruneReleased();
     const out: TouchLocation[] = [];
     for (const [pid, c] of this.contacts) {
       let state: TouchLocationState;
@@ -191,11 +203,63 @@ class TouchPanelImpl {
   reset(): void {
     this.queue.length = 0;
     this.contacts.clear();
+    this.mouseSecondOf = null;
     if (this.primary) clearTimeout(this.primary.holdTimer);
     this.primary = null;
   }
 
   // ------------------------------------------------------------ internals
+
+  /** Drops contacts released more than RELEASED_TTL ms ago (they were never read, or already reported). */
+  private pruneReleased(): void {
+    const now = performance.now();
+    for (const [pid, c] of this.contacts) if (c.released && now - c.releasedAt > RELEASED_TTL) this.contacts.delete(pid);
+  }
+
+  private release(c: Contact): void {
+    if (c.released) return;
+    c.released = true;
+    c.releasedAt = performance.now();
+  }
+
+  /**
+   * Mouse-only second finger: right button pressed/released while the left is held arrives as a
+   * chorded pointermove (buttons bitmask). Returns true if the event drove the emulated finger.
+   */
+  private handleMouseChord(e: PointerEvent): boolean {
+    if (e.pointerType !== 'mouse') return false;
+    const first = this.contacts.get(e.pointerId);
+    const leftHeld = !!first && !first.released;
+    const right = (e.buttons & 2) !== 0;
+    const p = this.mapper(e.clientX, e.clientY);
+    if (this.mouseSecondOf === e.pointerId) {
+      const second = this.contacts.get(MOUSE_SECOND_ID);
+      if (!right || !second) {
+        if (second) {
+          second.position = p;
+          this.release(second);
+        }
+        this.mouseSecondOf = null;
+      } else {
+        second.position = p;
+      }
+    } else if (right && leftHeld && this.mouseSecondOf === null) {
+      this.contacts.set(MOUSE_SECOND_ID, {
+        id: this.nextId++, pointerId: MOUSE_SECOND_ID, position: p, pressedReported: false, released: false, releasedAt: 0,
+      });
+      this.mouseSecondOf = e.pointerId;
+      if (this.primary) {
+        this.primary.cancelled = true;
+        clearTimeout(this.primary.holdTimer);
+      }
+    }
+    // left released while the right is still held: arrives as pointermove too
+    if (leftHeld && (e.buttons & 1) === 0 && e.type === 'pointermove') {
+      this.onUp(e);
+      return true;
+    }
+    return this.mouseSecondOf === e.pointerId;
+  }
 
   private enabled(t: GestureType): boolean {
     return (this.enabledGestures & t) !== 0;
@@ -219,9 +283,14 @@ class TouchPanelImpl {
   }
 
   private onDown = (e: PointerEvent): void => {
+    // Touches on a dialog (MessageBox) are system UI on WP7 and never reach the TouchPanel.
+    if ((e.target as Element | null)?.closest?.('.wp-messagebox-overlay')) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    this.pruneReleased();
     const p = this.mapper(e.clientX, e.clientY);
-    const c: Contact = { id: this.nextId++, pointerId: e.pointerId, position: p, pressedReported: false, released: false };
+    const c: Contact = {
+      id: this.nextId++, pointerId: e.pointerId, position: p, pressedReported: false, released: false, releasedAt: 0,
+    };
     this.contacts.set(e.pointerId, c);
     const now = performance.now();
     if (!this.primary) {
@@ -252,6 +321,7 @@ class TouchPanelImpl {
   };
 
   private onMove = (e: PointerEvent): void => {
+    if (this.handleMouseChord(e)) return;
     const c = this.contacts.get(e.pointerId);
     if (!c || c.released) return;
     const p = this.mapper(e.clientX, e.clientY);
@@ -283,11 +353,12 @@ class TouchPanelImpl {
   };
 
   private onUp = (e: PointerEvent): void => {
+    if (e.type === 'pointerup' && this.mouseSecondOf === e.pointerId) this.handleMouseChord(e); // buttons == 0
     const c = this.contacts.get(e.pointerId);
-    if (!c) return;
+    if (!c || c.released) return;
     const p = this.mapper(e.clientX, e.clientY);
     c.position = p;
-    c.released = true;
+    this.release(c);
     const pr = this.primary;
     if (!pr || pr.pointerId !== e.pointerId) return;
     clearTimeout(pr.holdTimer);
@@ -331,7 +402,12 @@ class TouchPanelImpl {
 
   private onCancel = (e: PointerEvent): void => {
     const c = this.contacts.get(e.pointerId);
-    if (c) c.released = true;
+    if (c) this.release(c);
+    if (this.mouseSecondOf === e.pointerId) {
+      const second = this.contacts.get(MOUSE_SECOND_ID);
+      if (second) this.release(second);
+      this.mouseSecondOf = null;
+    }
     if (this.primary && this.primary.pointerId === e.pointerId) {
       clearTimeout(this.primary.holdTimer);
       this.primary = null;
@@ -339,7 +415,8 @@ class TouchPanelImpl {
   };
 
   private onBlur = (): void => {
-    for (const c of this.contacts.values()) c.released = true;
+    for (const c of this.contacts.values()) this.release(c);
+    this.mouseSecondOf = null;
     if (this.primary) clearTimeout(this.primary.holdTimer);
     this.primary = null;
   };

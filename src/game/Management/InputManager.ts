@@ -42,6 +42,8 @@ export class InputManager {
   accelerometerCurrentZero: Vector3 = new Vector3();
 
   private firstValueAccelerometer: boolean;
+  /** Web: source generation the zero was taken from; recalibrate when the real sensor replaces the keyboard fallback. */
+  private calibratedGeneration = -1;
 
   /** Correction of the accelerometer coordinates (calibrated reading, per-axis piecewise linear). */
   get accelerometerReadingCorrected(): Vector3 {
@@ -111,8 +113,9 @@ export class InputManager {
     e: SensorReadingEventArgs<AccelerometerReadingType>,
   ): void => {
     this.accelerometerReading = e.sensorReading.acceleration.clone();
-    if (!this.firstValueAccelerometer) {
+    if (!this.firstValueAccelerometer || Accelerometer.sourceGeneration !== this.calibratedGeneration) {
       this.firstValueAccelerometer = true;
+      this.calibratedGeneration = Accelerometer.sourceGeneration;
       this.recalibrateAccelerometer();
     }
   };

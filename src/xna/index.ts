@@ -1,5 +1,5 @@
 /** XNA / WP7 compatibility layer. See ./README.md for C# -> TS translation rules. */
-export { MathHelper, Vector2, Vector3, Point, Rectangle, Matrix, ieeeRemainder } from './math';
+export { MathHelper, Vector2, Vector3, Point, Rectangle, Matrix, ieeeRemainder, toInt32 } from './math';
 export { Color, type Vector4Like } from './color';
 export { TimeSpan } from './timespan';
 export { XnaEvent, type EventHandler } from './event';

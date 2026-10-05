@@ -322,6 +322,13 @@ export class Vector3 {
   }
 }
 
+/**
+ * C# `(int)` cast with WP7/ARM semantics: truncates toward zero, NaN -> 0, out-of-range values saturate.
+ * (Plain Math.trunc would keep NaN / Infinity.)
+ */
+export const toInt32 = (v: number): number =>
+  Number.isNaN(v) ? 0 : v >= 2147483647 ? 2147483647 : v <= -2147483648 ? -2147483648 : Math.trunc(v);
+
 // ---------------------------------------------------------------------------
 // Point (int x, int y)
 // ---------------------------------------------------------------------------
@@ -331,8 +338,8 @@ export class Point {
   y: number;
   /** Values are truncated toward zero, like a C# (int) cast. */
   constructor(x = 0, y = 0) {
-    this.x = Math.trunc(x);
-    this.y = Math.trunc(y);
+    this.x = toInt32(x);
+    this.y = toInt32(y);
   }
   static get Zero(): Point {
     return new Point(0, 0);
@@ -360,10 +367,10 @@ export class Rectangle {
 
   /** Values are truncated toward zero, like a C# (int) cast. */
   constructor(x = 0, y = 0, width = 0, height = 0) {
-    this.x = Math.trunc(x);
-    this.y = Math.trunc(y);
-    this.width = Math.trunc(width);
-    this.height = Math.trunc(height);
+    this.x = toInt32(x);
+    this.y = toInt32(y);
+    this.width = toInt32(width);
+    this.height = toInt32(height);
   }
 
   static get Empty(): Rectangle {
@@ -435,8 +442,8 @@ export class Rectangle {
   /** In place. offset(dx, dy) | offset(Point) */
   offset(dx: number | Point, dy?: number): void {
     if (typeof dx === 'number') {
-      this.x += Math.trunc(dx);
-      this.y += Math.trunc(dy ?? 0);
+      this.x += toInt32(dx);
+      this.y += toInt32(dy ?? 0);
     } else {
       this.x += dx.x;
       this.y += dx.y;
