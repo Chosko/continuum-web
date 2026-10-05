@@ -11,13 +11,22 @@ body {
   background: #000;
   color: #fff;
   overscroll-behavior: none;
+  /* the stage is CSS-scaled: stop iOS landscape text inflation from resizing XAML text */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 #app.app-root {
   position: fixed;
-  inset: 0;
+  /* viewport-fit=cover: keep the letterboxed stage clear of notches / home indicator */
+  top: env(safe-area-inset-top, 0px);
+  right: env(safe-area-inset-right, 0px);
+  bottom: env(safe-area-inset-bottom, 0px);
+  left: env(safe-area-inset-left, 0px);
   overflow: hidden;
   background: #000;
+  /* no double-tap zoom / pinch on the letterbox bars either */
+  touch-action: none;
 }
 
 .stage {

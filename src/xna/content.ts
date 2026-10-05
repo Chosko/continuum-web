@@ -46,6 +46,12 @@ export function siteUrl(path: string): string {
   return baseUrl() + path.split('/').map(encodeURIComponent).join('/');
 }
 
+/** Safari / iOS WebKit (iOS Chrome/Firefox report CriOS/FxiOS, no "Chrome"). */
+const isWebKit = (): boolean => {
+  const ua = navigator.userAgent;
+  return /AppleWebKit/.test(ua) && !/Chrome|Chromium|Android|Edg\//.test(ua);
+};
+
 const normalize = (name: string): string => name.replace(/\\/g, '/').replace(/^\.?\//, '').toLowerCase();
 
 export class ContentManager {
@@ -136,6 +142,10 @@ export class ContentManager {
         let w: number;
         let h: number;
         try {
+          // WebKit (Safari, every iOS browser) has honoured premultiplyAlpha/colorSpaceConversion
+          // 'none' unreliably: a premultiplied bitmap would be premultiplied twice and break the
+          // exact magenta color key. Use the <img> path there (UNPACK_* pixelStorei applies).
+          if (typeof createImageBitmap !== 'function' || isWebKit()) throw new Error('use <img>');
           const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
           source = bmp;
           w = bmp.width;
@@ -143,8 +153,16 @@ export class ContentManager {
         } catch {
           const img = new Image();
           const obj = URL.createObjectURL(blob);
+          const loaded = new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error(`ContentLoadException: ${url}: image decode failed`));
+          });
           img.src = obj;
-          await img.decode();
+          try {
+            await img.decode();
+          } catch {
+            await loaded; // Safari can reject decode() spuriously (large images); onload still fires
+          }
           URL.revokeObjectURL(obj);
           source = img;
           w = img.naturalWidth;

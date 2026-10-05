@@ -82,6 +82,8 @@ export function createStage(root: HTMLElement): Stage {
   layout();
   window.addEventListener('resize', layout);
   window.visualViewport?.addEventListener('resize', layout);
+  // Older iOS can report the pre-rotation size during the first resize after a rotation.
+  window.addEventListener('orientationchange', () => setTimeout(layout, 300));
   // devicePixelRatio changes (zoom / moving between monitors)
   const watchDpr = (): void => {
     const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
@@ -107,6 +109,14 @@ export function createStage(root: HTMLElement): Stage {
 
   // No context menu / long-press callout on the game surface
   stage.addEventListener('contextmenu', (e) => e.preventDefault());
+  // iOS Safari ignores user-scalable=no; block its proprietary pinch gesture events too.
+  for (const t of ['gesturestart', 'gesturechange'])
+    document.addEventListener(t, (e) => e.preventDefault(), { passive: false });
+
+  // WebGL context loss (iOS under memory pressure / backgrounding, GPU resets): every texture
+  // and buffer is gone and assets are only loaded at boot, so ask for a restore and reload then.
+  canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
+  canvas.addEventListener('webglcontextrestored', () => window.location.reload());
 
   return {
     root,

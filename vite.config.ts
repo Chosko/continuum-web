@@ -5,7 +5,8 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: './',
   build: {
-    target: 'es2022',
+    // Safari 14 / iOS 14+ and older Android WebViews: lower ES2021+ syntax (??=, etc.).
+    target: ['es2020', 'safari14', 'firefox90', 'chrome90'],
     assetsInlineLimit: 0,
   },
 });

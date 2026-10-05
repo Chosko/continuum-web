@@ -26,8 +26,14 @@ void main() {
   gl_Position = vec4(a_pos * u_proj.xy + u_proj.zw, 0.0, 1.0);
 }`;
 
+// highp where available: with mediump (fp16 on Apple/mobile GPUs) the interpolated UVs of a
+// 2000px-wide sprite sheet are only ~1 texel accurate, so frames bleed/jitter on iOS.
 const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
 precision mediump float;
+#endif
 uniform sampler2D u_tex;
 varying vec2 v_uv;
 varying vec4 v_color;

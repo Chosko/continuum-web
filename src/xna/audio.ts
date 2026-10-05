@@ -7,13 +7,17 @@
  *     effect.duration: TimeSpan            SoundEffect.masterVolume (static)
  *   SoundEffectInstance:
  *     play() / pause() / resume() / stop(immediate?) / isLooped / volume / pitch / pan / state
- *   MediaPlayer (static) + Song (streamed through an <audio> element routed into Web Audio,
- *   so a multi-MB mp3 is not fully decoded into memory):
+ *   MediaPlayer (static) + Song (streamed by a plain <audio> element, so a multi-MB mp3 is not
+ *   fully decoded into memory; deliberately NOT routed through createMediaElementSource, which
+ *   on iOS Safari can go silent while the AudioContext is suspended/interrupted. Consequence:
+ *   on iOS element.volume is read-only, so MediaPlayer.volume only takes effect elsewhere;
+ *   isMuted uses element.muted and works everywhere):
  *     MediaPlayer.play(song) / stop() / pause() / resume() / isRepeating / volume / isMuted
  *     MediaPlayer.state / MediaPlayer.gameHasControl (always true)
  *
  * Autoplay: browsers keep audio locked until a user gesture. installAudioUnlock() (called by
- * the Stage) resumes the AudioContext on the first pointer/key event. While locked,
+ * the Stage) resumes the AudioContext on pointer/key events (listeners stay installed: iOS can
+ * suspend/"interrupt" the context later, e.g. after a call or backgrounding). While locked,
  * fire-and-forget SoundEffect plays are dropped (they would otherwise all burst at unlock),
  * looped instances start when unlocked, and MediaPlayer.play() is retried on unlock.
  */
@@ -86,11 +90,7 @@ export function installAudioUnlock(): void {
   if (unlockInstalled) return;
   unlockInstalled = true;
   const handler = (): void => {
-    unlockAudio();
-    if (isAudioUnlocked() && !MediaPlayerImpl.hasPending()) {
-      for (const t of ['pointerdown', 'pointerup', 'touchend', 'keydown', 'click'] as const)
-        window.removeEventListener(t, handler, true);
-    }
+    if (!isAudioUnlocked() || MediaPlayerImpl.hasPending()) unlockAudio();
   };
   for (const t of ['pointerdown', 'pointerup', 'touchend', 'keydown', 'click'] as const)
     window.addEventListener(t, handler, true);
@@ -306,10 +306,10 @@ export class SoundEffectInstance {
 export class Song {
   name = '';
   /** @internal */ readonly element: HTMLAudioElement;
-  /** @internal */ sourceNode: MediaElementAudioSourceNode | null = null;
   constructor(readonly url: string) {
     this.element = new Audio();
     this.element.preload = 'auto';
+    this.element.setAttribute('playsinline', '');
     this.element.src = url;
   }
   get duration(): TimeSpan {
@@ -339,30 +339,16 @@ class MediaPlayerImpl {
   static _muted = false;
   static _repeating = false;
   static pending = false;
-  static gain: GainNode | null = null;
 
   static hasPending(): boolean {
     return MediaPlayerImpl.pending;
   }
 
   static applyVolume(): void {
-    const v = MediaPlayerImpl._muted ? 0 : MediaPlayerImpl._volume;
     const song = MediaPlayerImpl.queue;
-    if (MediaPlayerImpl.gain) MediaPlayerImpl.gain.gain.value = v;
-    else if (song) song.element.volume = v;
-  }
-
-  static route(song: Song): void {
-    if (song.sourceNode) return;
-    try {
-      const c = getAudioContext();
-      song.sourceNode = c.createMediaElementSource(song.element);
-      MediaPlayerImpl.gain ??= c.createGain();
-      MediaPlayerImpl.gain.connect(c.destination);
-      song.sourceNode.connect(MediaPlayerImpl.gain);
-    } catch {
-      song.sourceNode = null; // fall back to element volume
-    }
+    if (!song) return;
+    song.element.muted = MediaPlayerImpl._muted;
+    song.element.volume = MediaPlayerImpl._volume; // ignored (read-only) on iOS
   }
 
   static startElement(): void {
@@ -425,7 +411,6 @@ export const MediaPlayer = {
       prev.element.currentTime = 0;
     }
     MediaPlayerImpl.queue = song;
-    MediaPlayerImpl.route(song);
     song.element.onended = (): void => {
       if (MediaPlayerImpl.queue === song && !song.element.loop) MediaPlayerImpl._state = MediaState.Stopped;
     };
