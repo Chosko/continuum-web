@@ -42,9 +42,8 @@ npm run preview   # serve the production build
 
 ## Deployment
 
-The site is deployed to GitHub Pages by a GitHub Actions workflow. Its template is in `ci/github-pages-deploy.yml`.
-Pushing workflow files needs the `workflow` permission, so someone who has that permission must move the template to
-`.github/workflows/deploy.yml`. Also set **Settings → Pages → Source** to **GitHub Actions**.
+Every push to `master` builds the site and deploys it to GitHub Pages through the workflow in
+`.github/workflows/deploy.yml` (Pages source: **GitHub Actions**). `public/CNAME` sets the custom domain `continuum.chosko.com`.
 
 ## Credits
 
