@@ -20,7 +20,8 @@
  *  - FreeDrag / HorizontalDrag / VerticalDrag: after moving more than TAP_TOLERANCE;
  *    delta = movement since the previous drag sample. Unread consecutive drag samples are merged.
  *  - Flick: on release after a drag, if the release velocity >= FLICK_MIN_VELOCITY px/s;
- *    position = (0,0), delta = velocity in px/s (like XNA).
+ *    position = (0,0), delta = velocity in px/s (like XNA). The velocity uses PointerEvent.timeStamp
+ *    and getCoalescedEvents() (when available), not handler time, so jank does not hide flicks.
  *  - DragComplete: on release after a drag (after Flick).
  *  - Pinch / PinchComplete are not implemented (unused by the game). A second finger cancels the
  *    pending tap/flick of the first.
@@ -137,6 +138,17 @@ interface Primary {
 }
 
 type Mapper = (clientX: number, clientY: number) => Vector2;
+
+/**
+ * When the event actually happened, on the performance.now() clock. Handler time can lag by a
+ * whole (janky) frame because pointermove is rAF-aligned, which would understate flick velocity.
+ * Falls back to performance.now() if timeStamp is missing or on another clock.
+ */
+function eventTime(e: Event): number {
+  const now = performance.now();
+  const t = e.timeStamp;
+  return t > 0 && t <= now + 1 && now - t < 5000 ? t : now;
+}
 
 class TouchPanelImpl {
   enabledGestures: GestureType = GestureType.None;
@@ -292,7 +304,7 @@ class TouchPanelImpl {
       id: this.nextId++, pointerId: e.pointerId, position: p, pressedReported: false, released: false, releasedAt: 0,
     };
     this.contacts.set(e.pointerId, c);
-    const now = performance.now();
+    const now = eventTime(e);
     if (!this.primary) {
       const pr: Primary = {
         pointerId: e.pointerId,
@@ -328,8 +340,14 @@ class TouchPanelImpl {
     c.position = p;
     const pr = this.primary;
     if (!pr || pr.pointerId !== e.pointerId) return;
-    const now = performance.now();
-    pr.samples.push({ t: now, p: p.clone() });
+    // Velocity samples: every coalesced hardware event with its own timestamp, when available.
+    const coalesced = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+    if (coalesced.length > 0) {
+      for (const ce of coalesced) pr.samples.push({ t: eventTime(ce), p: this.mapper(ce.clientX, ce.clientY) });
+    } else {
+      pr.samples.push({ t: eventTime(e), p: p.clone() });
+    }
+    const now = pr.samples[pr.samples.length - 1].t;
     while (pr.samples.length > 2 && now - pr.samples[0].t > FLICK_SAMPLE_WINDOW) pr.samples.shift();
 
     if (!pr.dragging) {
@@ -364,7 +382,7 @@ class TouchPanelImpl {
     clearTimeout(pr.holdTimer);
     this.primary = null;
     if (pr.cancelled) return;
-    const now = performance.now();
+    const now = Math.max(eventTime(e), pr.samples[pr.samples.length - 1].t);
 
     if (!pr.dragging) {
       if (pr.holdFired) return;

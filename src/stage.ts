@@ -4,7 +4,9 @@
  *   #app (fills the viewport, black)
  *     .stage  (absolutely positioned 480x800 CSS px, uniformly scaled with transform to fit,
  *              centered -> letterboxed with black bars)
- *       canvas.stage-canvas   WebGL, backing store 480x800 * devicePixelRatio
+ *       canvas.stage-canvas   WebGL, backing store 480x800 * scale * devicePixelRatio, i.e. one
+ *                             texel per DEVICE pixel actually covered (sharp when the stage is
+ *                             scaled up, no oversampling when it is scaled down)
  *       div.stage-overlay     HTML layer for the Silverlight pages (XAML -> DOM), 480x800 CSS px
  *
  * Everything inside .stage is laid out in VIRTUAL pixels (480x800) because the transform does
@@ -45,6 +47,16 @@ export function createStage(root: HTMLElement): Stage {
 
   let scale = 1;
 
+  // Largest backing store the GL implementation can present (renderbuffer / viewport limits).
+  const gl = graphicsDevice.gl;
+  const maxDims = gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array | null;
+  const maxPixels = Math.min(
+    (gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number) || 4096,
+    (gl.getParameter(gl.MAX_TEXTURE_SIZE) as number) || 4096,
+    maxDims?.[0] || 4096,
+    maxDims?.[1] || 4096,
+  );
+
   const layout = (): void => {
     const vw = root.clientWidth || window.innerWidth;
     const vh = root.clientHeight || window.innerHeight;
@@ -56,7 +68,15 @@ export function createStage(root: HTMLElement): Stage {
     const left = Math.round(((vw - w) / 2) * dpr) / dpr;
     const top = Math.round(((vh - h) / 2) * dpr) / dpr;
     stage.style.transform = `translate(${left}px, ${top}px) scale(${scale})`;
-    graphicsDevice.setDrawingBufferSize(Math.round(STAGE_WIDTH * dpr), Math.round(STAGE_HEIGHT * dpr));
+    // Backing store = device pixels covered by the stage (the CSS transform maps the 480x800 CSS
+    // canvas onto them 1:1). GraphicsDevice keeps the 480x800 virtual coordinate system and
+    // stretches it over the whole drawing buffer, so game code is unaffected. Clamp uniformly
+    // to the GL limits (the long side is the height).
+    const pxScale = Math.min(scale * dpr, maxPixels / STAGE_HEIGHT);
+    graphicsDevice.setDrawingBufferSize(
+      Math.max(1, Math.round(STAGE_WIDTH * pxScale)),
+      Math.max(1, Math.round(STAGE_HEIGHT * pxScale)),
+    );
   };
 
   layout();

@@ -13,8 +13,13 @@
  * Mobile: DeviceMotionEvent.accelerationIncludingGravity (m/s^2). The W3C spec frame has the
  * same axes but reports the reaction to gravity (flat face-up -> z = +9.81), so
  * WP7 = -browser / 9.80665. iOS Safari historically reports the opposite sign from the spec
- * (flat face-up -> z = -9.81), so on iOS WP7 = +browser / 9.80665. Override with
- * Accelerometer.signOverride = +1 / -1 if a device disagrees. The device frame is fixed to the
+ * (flat face-up -> z = -9.81), so on iOS WP7 = +browser / 9.80665. The UA guess is only the
+ * starting point: the sign is then verified from gravity itself (PORTING_NOTES §6.1). The phone is
+ * assumed held screen-up-ish when motion starts, so WP7 z must be negative; once SIGN_SAMPLES
+ * readings with |z| > SIGN_MIN_Z g have arrived, if their average converted z is positive the
+ * sign is flipped (once; sourceGeneration is bumped so the game recalibrates). Readings taken
+ * with the phone upright (|z| small) are skipped. Accelerometer.signOverride = +1 / -1 bypasses
+ * both the UA guess and the detection. The device frame is fixed to the
  * hardware (not the screen orientation), matching WP7 portrait-locked behaviour.
  *
  * iOS 13+: call requestMotionPermission() from a user gesture (e.g. the Start button).
@@ -62,6 +67,8 @@ const FALLBACK_DELAY = 600;
 const UPDATE_INTERVAL_MS = 20; // WP7 default TimeBetweenUpdates
 const KEY_TILT = 0.5; // g
 const KEY_RAMP_PER_SEC = 2.0; // g per second
+const SIGN_SAMPLES = 5; // qualifying readings averaged for the gravity-based sign check
+const SIGN_MIN_Z = 0.3; // g; |z| below this (phone upright) says nothing reliable about the sign
 
 const isIOS = (): boolean =>
   /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -101,6 +108,12 @@ class MotionSource {
   private kx = 0;
   private ky = 0;
   private lastKeyTick = 0;
+  /** Browser->WP7 sign: UA guess until the gravity check below confirms or flips it. */
+  autoSign: 1 | -1 = isIOS() ? 1 : -1;
+  /** true once the gravity check has decided autoSign. */
+  signChecked = false;
+  private signZSum = 0;
+  private signZCount = 0;
 
   subscribe(fn: () => void): void {
     this.listeners.add(fn);
@@ -138,12 +151,25 @@ class MotionSource {
         this.keyTimer = undefined;
       }
     }
-    const sign = Accelerometer.signOverride ?? (isIOS() ? 1 : -1);
+    if (!this.signChecked) this.checkSign(a.z / G);
+    const sign = Accelerometer.signOverride ?? this.autoSign;
     this.value = new Vector3((sign * a.x) / G, (sign * a.y) / G, (sign * a.z) / G);
     this.timestamp = performance.now();
     this.hasData = true;
     this.emit();
   };
+
+  /** Gravity-based sign detection: screen-up-ish means WP7 z < 0 (see header). */
+  private checkSign(rawZ: number): void {
+    if (Math.abs(rawZ) <= SIGN_MIN_Z) return;
+    this.signZSum += this.autoSign * rawZ;
+    if (++this.signZCount < SIGN_SAMPLES) return;
+    this.signChecked = true;
+    if (this.signZSum / this.signZCount > 0) {
+      this.autoSign = this.autoSign === 1 ? -1 : 1;
+      this.generation++; // readings so far had the wrong sign -> consumers recalibrate
+    }
+  }
 
   private static readonly KEYMAP: Record<string, 'l' | 'r' | 'u' | 'd'> = {
     ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'u', KeyW: 'u', ArrowDown: 'd', KeyS: 'd',
@@ -193,7 +219,10 @@ class MotionSource {
 const source = new MotionSource();
 
 export class Accelerometer {
-  /** Force the browser->WP7 sign (+1 or -1). null = auto (iOS +1, others -1). */
+  /**
+   * Force the browser->WP7 sign (+1 or -1). null = auto: UA guess (iOS +1, others -1), then
+   * verified/flipped from the first screen-up gravity readings.
+   */
   static signOverride: 1 | -1 | null = null;
 
   /** Always true: the keyboard fallback makes it available everywhere. */
@@ -217,6 +246,10 @@ export class Accelerometer {
   /** 'device' (real sensor), 'keyboard' (desktop fallback) or 'none' (no data yet). */
   static get mode(): 'none' | 'device' | 'keyboard' {
     return source.mode;
+  }
+  /** The browser->WP7 sign currently applied to devicemotion data. */
+  static get sign(): 1 | -1 {
+    return Accelerometer.signOverride ?? source.autoSign;
   }
   /** Changes when the data source switches (e.g. keyboard fallback -> real sensor). */
   static get sourceGeneration(): number {

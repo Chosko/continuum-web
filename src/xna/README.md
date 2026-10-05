@@ -240,6 +240,11 @@ accelerometer.start(); accelerometer.stop();
 On iOS, call `requestMotionPermission()` from a user-gesture handler (the main menu Start button)
 before the game page. On desktop (no devicemotion data within 600 ms) arrow keys / WASD tilt
 smoothly up to ±0.5 g (Right = +x, Up = +y). `Accelerometer.mode` tells which source is active.
+Browser→WP7 sign: starts from a UA guess (iOS +1, others −1), then is checked against gravity:
+the phone is assumed screen-up-ish when motion starts, so the average converted z of the first 5
+readings with |z| > 0.3 g must be negative; if it is positive the sign flips once (and
+`sourceGeneration` bumps so InputManager recalibrates). `Accelerometer.sign` shows the sign in use;
+`Accelerometer.signOverride = 1 | -1` forces it.
 The keyboard is ignored while an `<input>`/`<textarea>` has focus (name entry box).
 `VibrateController.Default.Start(TimeSpan)` → `navigator.vibrate?.(ts.totalMilliseconds)` (not shimmed).
 
