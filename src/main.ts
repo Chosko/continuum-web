@@ -39,6 +39,18 @@ async function main(): Promise<void> {
   ]);
 
   const app = new App(stage, content);
+  // Read-only debug/QA hook (scripts/playtest.cjs): exposes the app, its GameState and the current page.
+  (window as unknown as { __continuum: unknown }).__continuum = {
+    get app() {
+      return app;
+    },
+    get gs() {
+      return app.gs;
+    },
+    get page() {
+      return app.rootFrame.currentPage;
+    },
+  };
   app.run();
   // MainPage starts with the same splash image on top (fading out), so the hand-off is seamless.
   splash.remove();
